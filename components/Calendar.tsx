@@ -17,8 +17,8 @@ function Calender() {
     e.preventDefault();
     if (selectedDate) {
       const effortData = {
-        application: setSelectApp,
-        office: setSelectOffice,
+        application: selectApp,
+        office: selectOffice,
         efforts: effortsText,
       };
 
@@ -37,17 +37,10 @@ function Calender() {
     if (modalOpen && selectedDate) {
       const savedEfforts = localStorage.getItem(`efforts-${selectedDate}`);
       if (savedEfforts) {
-        try {
-          const parsed = JSON.parse(savedEfforts);
-          setEffortsText(parsed.efforts || "");
-          setSelectApp(parsed.application || "");
-          setSelectOffice(parsed.office || "");
-        } catch (error) {
-          console.error("Error parsing saved efforts:", error);
-          setEffortsText("");
-          setSelectApp("");
-          setSelectOffice("");
-        }
+        const parsed = JSON.parse(savedEfforts);
+        setEffortsText(parsed.efforts || "");
+        setSelectApp(parsed.application || "");
+        setSelectOffice(parsed.office || "");
       } else {
         setEffortsText("");
         setSelectApp("");
@@ -55,6 +48,7 @@ function Calender() {
       }
     }
   }, [modalOpen, selectedDate]);
+
   return (
     <div className="h-screen p-4 bg-gray-50">
       <div className="bg-white rounded-2xl shadow-xl h-full p-4">
@@ -128,7 +122,7 @@ function Calender() {
                       </div>
                       <div className="mb-4">
                         <label className="block text-white font-semibold mb-2">
-                          Office
+                          Status
                         </label>
                         <select
                           value={selectOffice}
@@ -137,6 +131,9 @@ function Calender() {
                           className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
                           required
                         >
+                          <option value="" disabled>
+                            Select Status
+                          </option>
                           <option value="App1">In Office</option>
                           <option value="App2">Out Office</option>
                         </select>
