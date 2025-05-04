@@ -8,18 +8,27 @@ import { useEffect, useState } from "react";
 import SideBar from "./SideBar";
 import toast from "react-hot-toast";
 function Calender() {
-  const [events] = useState([
-    { title: "Code Review", date: "2025-04-25" },
-    { title: "Team Meeting", date: "2025-04-27" },
-  ]);
   const [modalOpen, setmodalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [effortsText, setEffortsText] = useState("");
+  const [selectApp, setSelectApp] = useState("");
+  const [selectOffice, setSelectOffice] = useState("");
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (selectedDate) {
-      localStorage.setItem(`efforts-${selectedDate}`, effortsText);
+      const effortData = {
+        application: setSelectApp,
+        office: setSelectOffice,
+        efforts: effortsText,
+      };
+
+      localStorage.setItem(
+        `efforts-${selectedDate}`,
+        JSON.stringify(effortData)
+      );
       setEffortsText("");
+      setSelectApp("");
+      setSelectOffice("");
       setmodalOpen(false);
       toast.success("Efforts submitted successfully!");
     }
@@ -28,9 +37,21 @@ function Calender() {
     if (modalOpen && selectedDate) {
       const savedEfforts = localStorage.getItem(`efforts-${selectedDate}`);
       if (savedEfforts) {
-        setEffortsText(savedEfforts);
+        try {
+          const parsed = JSON.parse(savedEfforts);
+          setEffortsText(parsed.efforts || "");
+          setSelectApp(parsed.application || "");
+          setSelectOffice(parsed.office || "");
+        } catch (error) {
+          console.error("Error parsing saved efforts:", error);
+          setEffortsText("");
+          setSelectApp("");
+          setSelectOffice("");
+        }
       } else {
-        setEffortsText(""); // Clear textarea if no saved data for this date
+        setEffortsText("");
+        setSelectApp("");
+        setSelectOffice("");
       }
     }
   }, [modalOpen, selectedDate]);
@@ -42,7 +63,6 @@ function Calender() {
           initialView="dayGridMonth"
           editable={true}
           selectable={true}
-          events={events}
           nowIndicator={true}
           headerToolbar={{
             left: "prev,next today",
@@ -86,23 +106,41 @@ function Calender() {
                     />
 
                     {/* Application Dropdown */}
-                    <div className="mb-4">
-                      <label className="block text-white font-semibold mb-2">
-                        Application
-                      </label>
-                      <select
-                        name="application"
-                        className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
-                        defaultValue=""
-                        required
-                      >
-                        <option value="" disabled>
-                          Select Application
-                        </option>
-                        <option value="App1">App1</option>
-                        <option value="App2">App2</option>
-                        <option value="App3">App3</option>
-                      </select>
+                    <div className="flex space-x-3">
+                      <div className="mb-4">
+                        <label className="block text-white font-semibold mb-2">
+                          Application
+                        </label>
+                        <select
+                          name="application"
+                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
+                          value={selectApp}
+                          onChange={(e) => setSelectApp(e.target.value)}
+                          required
+                        >
+                          <option value="" disabled>
+                            Select Application
+                          </option>
+                          <option value="App1">App1</option>
+                          <option value="App2">App2</option>
+                          <option value="App3">App3</option>
+                        </select>
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-white font-semibold mb-2">
+                          Office
+                        </label>
+                        <select
+                          value={selectOffice}
+                          onChange={(e) => setSelectOffice(e.target.value)}
+                          name="application"
+                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
+                          required
+                        >
+                          <option value="App1">In Office</option>
+                          <option value="App2">Out Office</option>
+                        </select>
+                      </div>
                     </div>
 
                     {/* Efforts Textarea */}
@@ -117,15 +155,16 @@ function Calender() {
                         required
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
-                            e.preventDefault();
-                            const droppedText = e.dataTransfer.getData("text/plain");
-                            setEffortsText((prev) => (prev ? prev + "\n" + droppedText : droppedText));
-                          }}
+                          e.preventDefault();
+                          const droppedText =
+                            e.dataTransfer.getData("text/plain");
+                          setEffortsText((prev) =>
+                            prev ? prev + "\n" + droppedText : droppedText
+                          );
+                        }}
                         value={effortsText}
-                        onChange={(e) => setEffortsText(e.target.value)} // optional if user can type
+                        onChange={(e) => setEffortsText(e.target.value)}
                       ></textarea>
-
-
                     </div>
 
                     {/* Submit Button */}
@@ -144,7 +183,6 @@ function Calender() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
