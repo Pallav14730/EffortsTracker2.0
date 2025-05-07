@@ -13,6 +13,31 @@ function Calender() {
   const [effortsText, setEffortsText] = useState("");
   const [selectApp, setSelectApp] = useState("");
   const [selectOffice, setSelectOffice] = useState("");
+  const [effortsHrs, setEffortsHrs] = useState<number[]>([]);
+
+  useEffect(() => {
+    const lines = effortsText.split("\n").filter(Boolean);
+
+    setEffortsHrs((prevHrs) => {
+      const newHrs = [...prevHrs];
+
+      while (newHrs.length < lines.length) {
+        newHrs.push(0);
+      }
+
+      return newHrs.slice(0, lines.length);
+    });
+  }, [effortsText]);
+  function handleIncrement(index: number) {
+    const updated = [...effortsHrs];
+    if (updated[index] < 9) updated[index] = updated[index] + 0.5;
+    setEffortsHrs(updated);
+  }
+  function handleDecrement(index: number) {
+    const updated = [...effortsHrs];
+    if (updated[index] > 0) updated[index] = updated[index] - 0.5;
+    setEffortsHrs(updated);
+  }
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (selectedDate) {
@@ -20,6 +45,7 @@ function Calender() {
         application: selectApp,
         office: selectOffice,
         efforts: effortsText,
+        effortsHrs: effortsHrs,
       };
 
       localStorage.setItem(
@@ -41,6 +67,7 @@ function Calender() {
         setEffortsText(parsed.efforts || "");
         setSelectApp(parsed.application || "");
         setSelectOffice(parsed.office || "");
+        setEffortsHrs(parsed.effortsHrs || []);
       } else {
         setEffortsText("");
         setSelectApp("");
@@ -71,11 +98,11 @@ function Calender() {
         />
       </div>
       {modalOpen && (
-        <div className="fixed inset-0   flex items-center justify-center z-10">
-          <div className="bg-[#0d011f] h-3/3 p-6 rounded-xl shadow-lg w-full">
+        <div className="fixed inset-0 overflow-scroll h-screen   flex items-center justify-center z-64">
+          <div className="bg-white h-3/3 p-6 rounded-xl shadow-lg w-full">
             <div className="flex justify-end">
               <X
-                className="text-white items-end  cursor-pointer"
+                className="text-black items-end  cursor-pointer"
                 onClick={() => setmodalOpen(false)}
               />
             </div>
@@ -84,11 +111,10 @@ function Calender() {
               <div className="w-1/4 p-4">
                 <SideBar />
               </div>
-
               {/* Form aligned right */}
-              <div className="w-3/4 flex justify-end p-8">
+              <div className="w-3/4 flex justify-end p-2">
                 <div className="w-full max-w-md">
-                  <h1 className="text-white text-2xl font-bold text-center mb-6">
+                  <h1 className="text-black text-2xl font-bold text-center mb-6">
                     {selectedDate?.slice(0, 10)}
                   </h1>
                   <form onSubmit={handleSubmit}>
@@ -102,12 +128,12 @@ function Calender() {
                     {/* Application Dropdown */}
                     <div className="flex space-x-3">
                       <div className="mb-4">
-                        <label className="block text-white font-semibold mb-2">
+                        <label className="block text-black font-semibold mb-2">
                           Application
                         </label>
                         <select
                           name="application"
-                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
+                          className="w-full border text-black border-gray-300 rounded-lg p-2 bg-transparent"
                           value={selectApp}
                           onChange={(e) => setSelectApp(e.target.value)}
                           required
@@ -121,14 +147,14 @@ function Calender() {
                         </select>
                       </div>
                       <div className="mb-4">
-                        <label className="block text-white font-semibold mb-2">
-                          Status
+                        <label className="block text-black font-semibold mb-2">
+                          Timing
                         </label>
                         <select
                           value={selectOffice}
                           onChange={(e) => setSelectOffice(e.target.value)}
                           name="application"
-                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
+                          className="w-full border text-black border-gray-300 rounded-lg p-2 bg-transparent"
                           required
                         >
                           <option value="" disabled>
@@ -142,13 +168,13 @@ function Calender() {
 
                     {/* Efforts Textarea */}
                     <div className="mb-4">
-                      <label className="block text-white font-semibold mb-2">
+                      <label className="block text-black font-semibold mb-2">
                         Efforts
                       </label>
                       <textarea
                         name="efforts"
                         placeholder="Drop your efforts here..."
-                        className="w-full h-32 border-2 border-dashed border-gray-400 text-white bg-transparent rounded-lg p-2 resize-none placeholder-white"
+                        className="w-full h-32 border-2 border-dashed border-gray-400 text-black bg-transparent rounded-lg p-2 resize-none "
                         required
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
@@ -165,11 +191,67 @@ function Calender() {
                     </div>
 
                     {/* Submit Button */}
-                    <div className="flex justify-end">
+                    {/* <div className="flex justify-end">
                       <button
                         type="submit"
-                        className="bg-purple-700 cursor-pointer hover:bg-[#3b2a4f] rounded-xl w-full py-2 px-4 text-white font-semibold transition"
+                        className="bg-purple-700 cursor-pointer hover:bg-[#3b2a4f] rounded-xl w-full py-2 px-4 text-black font-semibold transition"
                       >
+                        Submit
+                      </button>
+                    </div> */}
+
+                    {/* dfmdkfmdkfm */}
+                    <div className="h-[200px] overflow-y-auto ">
+                      <div className="min-w-full bg-white text-black rounded-xl overflow-hidden">
+                        <div>
+                          <div className="flex  items-center justify-between bg-purple-700 text-white">
+                            <p className="py-2 px-4 text-left">Activity Name</p>
+                            <p className="py-2 px-4 text-left">Effort (hrs)</p>
+                          </div>
+                        </div>
+                        <div>
+                          {(effortsText.split("\n") || []).map(
+                            (text: string, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between"
+                              >
+                                <div>
+                                  <span>{text}</span>
+                                </div>
+                                {text && (
+                                  <div className="flex items-center m-4 space-x-5">
+                                    <div>
+                                      <h1
+                                        onClick={() => handleIncrement(index)}
+                                        className="w-5 cursor-pointer text-3xl truncate whitespace-nowrap overflow-hidden"
+                                      >
+                                        +
+                                      </h1>
+                                    </div>
+                                    <div className="w-10 text-center">
+                                      {effortsHrs[index] || 0}
+                                    </div>
+                                    <div>
+                                      <h1
+                                        className="w-5 cursor-pointer text-3xl truncate whitespace-nowrap overflow-hidden"
+                                        onClick={() => handleDecrement(index)}
+                                      >
+                                        -
+                                      </h1>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* <!-- Submit Button --> */}
+                    <div className="mt-6 text-center">
+                      <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
                         Submit
                       </button>
                     </div>
@@ -185,3 +267,4 @@ function Calender() {
 }
 export default Calender;
 // bg-[#0d011f]
+
