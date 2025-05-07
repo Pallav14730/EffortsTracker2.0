@@ -15,7 +15,6 @@ function Calender() {
   const [selectOffice, setSelectOffice] = useState("");
   const [effortsHrs, setEffortsHrs] = useState<number[]>([]);
 
-  const totalHrs = effortsHrs.reduce((sum, hrs) => (sum += sum + hrs), 0);
   useEffect(() => {
     const lines = effortsText.split("\n").filter(Boolean);
 
@@ -39,6 +38,7 @@ function Calender() {
     if (updated[index] > 0) updated[index] = updated[index] - 0.5;
     setEffortsHrs(updated);
   }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (selectedDate) {
@@ -191,9 +191,9 @@ function Calender() {
                       ></textarea>
                     </div>
                     <div className="flex items-center justify-center m-4 gap-11">
-                      <div className="w-full">
-                        <h1>Total Hrs: {totalHrs}</h1>
-                      </div>
+                      {/* <div className="w-full">
+                        <h1>Total Hrs: {totalHrs.toFixed(1)}</h1>
+                      </div> */}
                       {/* <!-- Submit Button --> */}
                       <div className="text-center">
                         <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
