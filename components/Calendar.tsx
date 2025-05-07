@@ -15,6 +15,7 @@ function Calender() {
   const [selectOffice, setSelectOffice] = useState("");
   const [effortsHrs, setEffortsHrs] = useState<number[]>([]);
 
+  const totalHrs = effortsHrs.reduce((sum, hrs) => (sum += sum + hrs), 0);
   useEffect(() => {
     const lines = effortsText.split("\n").filter(Boolean);
 
@@ -189,18 +190,17 @@ function Calender() {
                         onChange={(e) => setEffortsText(e.target.value)}
                       ></textarea>
                     </div>
-
-                    {/* Submit Button */}
-                    {/* <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        className="bg-purple-700 cursor-pointer hover:bg-[#3b2a4f] rounded-xl w-full py-2 px-4 text-black font-semibold transition"
-                      >
-                        Submit
-                      </button>
-                    </div> */}
-
-                    {/* dfmdkfmdkfm */}
+                    <div className="flex items-center justify-center m-4 gap-11">
+                      <div className="w-full">
+                        <h1>Total Hrs: {totalHrs}</h1>
+                      </div>
+                      {/* <!-- Submit Button --> */}
+                      <div className="text-center">
+                        <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
+                          Submit
+                        </button>
+                      </div>
+                    </div>
                     <div className="h-[200px] overflow-y-auto ">
                       <div className="min-w-full bg-white text-black rounded-xl overflow-hidden">
                         <div>
@@ -247,13 +247,6 @@ function Calender() {
                           )}
                         </div>
                       </div>
-                    </div>
-
-                    {/* <!-- Submit Button --> */}
-                    <div className="mt-6 text-center">
-                      <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
-                        Submit
-                      </button>
                     </div>
                   </form>
                 </div>
