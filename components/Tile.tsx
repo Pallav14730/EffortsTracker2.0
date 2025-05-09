@@ -34,7 +34,7 @@ export default function Tile() {
   return (
     <div className="space-y-2">
       <div className="flex flex-col gap-3 relative group text-white px-1 text-md leading-tight">
-        <p className="bg-[#3b2a4f] hover:bg-purple-700 rounded-xl py-2 px-4 text-center flex items-center gap-3 transition-all delay-300">
+        <p className="bg-[#3b2a4f] hover:bg-purple-700 rounded-xl py-2 px-4 text-center flex items-center gap-3 transition-all delay-600">
           Production Support - IM Activites
         </p>
         <div className="absolute top-0 space-y-2 left-full w-56 rounded hidden group-hover:flex group-hover:flex-col z-10">

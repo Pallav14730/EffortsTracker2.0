@@ -14,6 +14,7 @@ function Calender() {
   const [selectApp, setSelectApp] = useState("");
   const [selectOffice, setSelectOffice] = useState("");
   const [effortsHrs, setEffortsHrs] = useState<number[]>([]);
+  const [comments, setComments] = useState<string[]>([]);
 
   useEffect(() => {
     const lines = effortsText.split("\n").filter(Boolean);
@@ -24,6 +25,7 @@ function Calender() {
       while (newHrs.length < lines.length) {
         newHrs.push(0);
       }
+      // setComments(new Array(lines.length).fill(""));
 
       return newHrs.slice(0, lines.length);
     });
@@ -47,6 +49,7 @@ function Calender() {
         office: selectOffice,
         efforts: effortsText,
         effortsHrs: effortsHrs,
+        comments: comments,
       };
 
       localStorage.setItem(
@@ -57,6 +60,7 @@ function Calender() {
       setSelectApp("");
       setSelectOffice("");
       setmodalOpen(false);
+      setComments(comments);
       toast.success("Efforts submitted successfully!");
     }
   }
@@ -69,6 +73,7 @@ function Calender() {
         setSelectApp(parsed.application || "");
         setSelectOffice(parsed.office || "");
         setEffortsHrs(parsed.effortsHrs || []);
+        setComments(parsed.comments || []);
       } else {
         setEffortsText("");
         setSelectApp("");
@@ -99,34 +104,32 @@ function Calender() {
         />
       </div>
       {modalOpen && (
-        <div className="fixed inset-0 overflow-scroll h-screen   flex items-center justify-center z-64">
-          <div className="bg-white h-3/3 p-6 rounded-xl shadow-lg w-full">
+        <div className="fixed inset-0 overflow-scroll h-screen   flex items-center justify-center z-50">
+          <div className="bg-white h-3/3  p-6 rounded-xl shadow-lg w-full">
             <div className="flex justify-end">
               <X
                 className="text-black items-end  cursor-pointer"
                 onClick={() => setmodalOpen(false)}
               />
             </div>
-            <div className="flex min-h-screen w-full ">
-              {/* Sidebar aligned left */}
+            <div className="flex min-h-screen justify-between w-full ">
               <div className="w-1/4 p-4">
                 <SideBar />
               </div>
-              {/* Form aligned right */}
-              <div className="w-3/4 flex justify-end p-2">
-                <div className="w-full max-w-md">
+              <div className="w-2/4 flex  p-4">
+                {" "}
+                {/* w-3/4 */}
+                <div className="w-full ">
                   <h1 className="text-black text-2xl font-bold text-center mb-6">
                     {selectedDate?.slice(0, 10)}
                   </h1>
                   <form onSubmit={handleSubmit}>
-                    {/* Selected Date as Hidden Input */}
                     <input
                       type="hidden"
                       name="date"
                       value={selectedDate || ""}
                     />
 
-                    {/* Application Dropdown */}
                     <div className="flex space-x-3">
                       <div className="mb-4">
                         <label className="block text-black font-semibold mb-2">
@@ -167,7 +170,6 @@ function Calender() {
                       </div>
                     </div>
 
-                    {/* Efforts Textarea */}
                     <div className="mb-4">
                       <label className="block text-black font-semibold mb-2">
                         Efforts
@@ -204,8 +206,9 @@ function Calender() {
                     <div className="h-[200px] overflow-y-auto ">
                       <div className="min-w-full bg-white text-black rounded-xl overflow-hidden">
                         <div>
-                          <div className="flex  items-center justify-between bg-purple-700 text-white">
+                          <div className="flex shadow-lg  items-center justify-between bg-purple-700 text-white">
                             <p className="py-2 px-4 text-left">Activity Name</p>
+                            <p className="py-2 px-4 text-left">Comments</p>
                             <p className="py-2 px-4 text-left">Effort (hrs)</p>
                           </div>
                         </div>
@@ -219,8 +222,21 @@ function Calender() {
                                 <div>
                                   <span>{text}</span>
                                 </div>
+
                                 {text && (
                                   <div className="flex items-center m-4 space-x-5">
+                                    <div>
+                                      <input
+                                        value={comments[index] || ""}
+                                        onChange={(e) => {
+                                          const updated = [...comments];
+                                          updated[index] = e.target.value;
+                                          setComments(updated);
+                                        }}
+                                        className="border outline-none p-2 rounded-lg"
+                                        type="text"
+                                      />
+                                    </div>
                                     <div>
                                       <h1
                                         onClick={() => handleIncrement(index)}
