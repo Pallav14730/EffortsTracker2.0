@@ -105,10 +105,10 @@ function Calender() {
       </div>
       {modalOpen && (
         <div className="fixed inset-0 overflow-scroll h-screen   flex items-center justify-center z-50">
-          <div className="bg-white h-3/3  p-6 rounded-xl shadow-lg w-full">
-            <div className="flex justify-end">
+          <div className="bg-teal-900 h-3/3  p-6 rounded-xl shadow-lg w-full">
+            <div className="flex  justify-end">
               <X
-                className="text-black items-end  cursor-pointer"
+                className="text-white items-end  cursor-pointer"
                 onClick={() => setmodalOpen(false)}
               />
             </div>
@@ -120,7 +120,7 @@ function Calender() {
                 {" "}
                 {/* w-3/4 */}
                 <div className="w-full ">
-                  <h1 className="text-black text-2xl font-bold text-center mb-6">
+                  <h1 className="text-white text-2xl font-bold text-center mb-6">
                     {selectedDate?.slice(0, 10)}
                   </h1>
                   <form onSubmit={handleSubmit}>
@@ -132,12 +132,12 @@ function Calender() {
 
                     <div className="flex space-x-3">
                       <div className="mb-4">
-                        <label className="block text-black font-semibold mb-2">
+                        <label className="block text-white font-semibold mb-2">
                           Application
                         </label>
                         <select
                           name="application"
-                          className="w-full border text-black border-gray-300 rounded-lg p-2 bg-transparent"
+                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
                           value={selectApp}
                           onChange={(e) => setSelectApp(e.target.value)}
                           required
@@ -151,14 +151,14 @@ function Calender() {
                         </select>
                       </div>
                       <div className="mb-4">
-                        <label className="block text-black font-semibold mb-2">
+                        <label className="block text-white font-semibold mb-2">
                           Timing
                         </label>
                         <select
                           value={selectOffice}
                           onChange={(e) => setSelectOffice(e.target.value)}
                           name="application"
-                          className="w-full border text-black border-gray-300 rounded-lg p-2 bg-transparent"
+                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
                           required
                         >
                           <option value="" disabled>
@@ -171,13 +171,13 @@ function Calender() {
                     </div>
 
                     <div className="mb-4">
-                      <label className="block text-black font-semibold mb-2">
+                      <label className="block text-white font-semibold mb-2">
                         Efforts
                       </label>
                       <textarea
                         name="efforts"
                         placeholder="Drop your efforts here..."
-                        className="w-full h-32 border-2 border-dashed border-gray-400 text-black bg-transparent rounded-lg p-2 resize-none "
+                        className="w-full h-32 border-2 border-dashed border-gray-400 text-white bg-transparent rounded-lg p-2 resize-none "
                         required
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
@@ -204,7 +204,7 @@ function Calender() {
                       </div>
                     </div>
                     <div className="h-[200px] overflow-y-auto ">
-                      <div className="min-w-full bg-white text-black rounded-xl overflow-hidden">
+                      <div className="min-w-full bg-white text-black  rounded-xl overflow-hidden">
                         <div>
                           <div className="flex shadow-lg  items-center justify-between bg-purple-700 text-white">
                             <p className="py-2 px-4 text-left">Activity Name</p>
@@ -217,7 +217,7 @@ function Calender() {
                             (text: string, index: number) => (
                               <div
                                 key={index}
-                                className="flex items-center justify-between"
+                                className="flex p-2 items-center justify-between"
                               >
                                 <div>
                                   <span>{text}</span>
@@ -239,10 +239,10 @@ function Calender() {
                                     </div>
                                     <div>
                                       <h1
-                                        onClick={() => handleIncrement(index)}
                                         className="w-5 cursor-pointer text-3xl truncate whitespace-nowrap overflow-hidden"
+                                        onClick={() => handleDecrement(index)}
                                       >
-                                        +
+                                        -
                                       </h1>
                                     </div>
                                     <div className="w-10 text-center">
@@ -250,10 +250,10 @@ function Calender() {
                                     </div>
                                     <div>
                                       <h1
+                                        onClick={() => handleIncrement(index)}
                                         className="w-5 cursor-pointer text-3xl truncate whitespace-nowrap overflow-hidden"
-                                        onClick={() => handleDecrement(index)}
                                       >
-                                        -
+                                        +
                                       </h1>
                                     </div>
                                   </div>
