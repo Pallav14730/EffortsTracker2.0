@@ -5,17 +5,32 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import SideBar from "./SideBar";
 import toast from "react-hot-toast";
-function Calender() {
+import { EventInput } from "@fullcalendar/core";
+import MenuData from "./MenuData";
+import EffortData from "./EffortData";
+import { v4 as uuidv4 } from "uuid";
+
+interface ToggleData {
+  isMenuOpen: boolean;
+  toggleMenu: () => void;
+}
+export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
   const [modalOpen, setmodalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [effortsText, setEffortsText] = useState("");
   const [selectApp, setSelectApp] = useState("");
   const [selectOffice, setSelectOffice] = useState("");
   const [effortsHrs, setEffortsHrs] = useState<number[]>([]);
   const [comments, setComments] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [droppedTiles, setDroppedTiles] = useState<
+    { title: string; color: string }[]
+  >([]);
 
+  const [fullcalendarEvents, setFullcalendarEvents] = useState<EventInput[]>(
+    []
+  );
   useEffect(() => {
     const lines = effortsText.split("\n").filter(Boolean);
 
@@ -25,7 +40,6 @@ function Calender() {
       while (newHrs.length < lines.length) {
         newHrs.push(0);
       }
-      // setComments(new Array(lines.length).fill(""));
 
       return newHrs.slice(0, lines.length);
     });
@@ -45,25 +59,66 @@ function Calender() {
     e.preventDefault();
     if (selectedDate) {
       const effortData = {
+        other: "Efforts Filled",
+        start: Date,
         application: selectApp,
         office: selectOffice,
         efforts: effortsText,
         effortsHrs: effortsHrs,
         comments: comments,
       };
-
       localStorage.setItem(
         `efforts-${selectedDate}`,
         JSON.stringify(effortData)
       );
+      const newEvents = effortsText
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .map((line) => {
+          const tile = droppedTiles.find((t) => t.title === line);
+          return {
+            id: uuidv4(),
+            title: line,
+            start: selectedDate,
+            allDay: true,
+            color: tile?.color,
+          };
+        });
+
+      setFullcalendarEvents((prevEvents) => [...prevEvents, ...newEvents]);
+      localStorage.setItem(`events-${selectedDate}`, JSON.stringify(newEvents));
+
       setEffortsText("");
       setSelectApp("");
       setSelectOffice("");
       setmodalOpen(false);
       setComments(comments);
+      // setfullCalendarEvents([]);
       toast.success("Efforts submitted successfully!");
     }
   }
+  useEffect(() => {
+    const allEvents: EventInput[] = [];
+
+    for (const key in localStorage) {
+      if (key.startsWith("events-")) {
+        const eventData = localStorage.getItem(key);
+        if (eventData) {
+          try {
+            const parsed = JSON.parse(eventData);
+            if (Array.isArray(parsed)) {
+              allEvents.push(...parsed);
+            }
+          } catch (e) {
+            console.error(`Error parsing events from key ${key}`, e);
+          }
+        }
+      }
+    }
+
+    setFullcalendarEvents(allEvents);
+  }, []);
+
   useEffect(() => {
     if (modalOpen && selectedDate) {
       const savedEfforts = localStorage.getItem(`efforts-${selectedDate}`);
@@ -81,45 +136,79 @@ function Calender() {
       }
     }
   }, [modalOpen, selectedDate]);
+  function handleEventClick(info: EventInput) {
+    if (!confirm("Do you want to delete this tile?")) return;
+
+    const eventId = info.event.id;
+    const eventDate = info.event.startStr;
+
+    setFullcalendarEvents((prevEvents) =>
+      prevEvents.filter((event) => event.id !== eventId)
+    );
+    const stored = localStorage.getItem(`events-${eventDate}`);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const updated = parsed.filter(
+        (event: EventInput) => event.id !== eventId
+      );
+      localStorage.setItem(`events-${eventDate}`, JSON.stringify(updated));
+    }
+    info.event.remove();
+  }
 
   return (
-    <div className="h-screen p-4 bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-xl h-full p-4">
+    <div className="flex h-screen p-4  bg-gray-50">
+      {isMenuOpen && <MenuData onClickcrossMenu={toggleMenu} />}
+      <EffortData />
+      <div className=" bg-white rounded-2xl shadow-xl h-full w-full p-4">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
-          editable={true}
           selectable={true}
           nowIndicator={true}
+          dragScroll={true}
+          views={{
+            dayGridMonth: {
+              dayMaxEventRows: 2,
+            },
+            timeGridWeek: {
+              dayMaxEventRows: false,
+            },
+            timeGridDay: {
+              dayMaxEventRows: false,
+            },
+          }}
+          events={fullcalendarEvents}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
-            right: "dayGridMonth,",
+            right: "dayGridMonth,timeGridDay,timeGridWeek",
           }}
           dateClick={(info) => {
             setSelectedDate(info.dateStr);
             setmodalOpen(true);
           }}
+          eventClick={handleEventClick}
           height="100%"
         />
       </div>
       {modalOpen && (
-        <div className="fixed inset-0 overflow-scroll h-screen   flex items-center justify-center z-50">
-          <div className="bg-teal-900 h-3/3  p-6 rounded-xl shadow-lg w-full">
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/7  z-50 rounded-xl p-4 shadow-2xl">
+          <div className="bg-teal-900 text-center  p-2 rounded-xl shadow-lg">
             <div className="flex  justify-end">
               <X
                 className="text-white items-end  cursor-pointer"
                 onClick={() => setmodalOpen(false)}
               />
             </div>
-            <div className="flex min-h-screen justify-between w-full ">
-              <div className="w-1/4 p-4">
+            <div className="">
+              {/* <div className="w-1/4 p-4">
                 <SideBar />
-              </div>
-              <div className="w-2/4 flex  p-4">
+              </div> */}
+              <div className=" flex  p-4">
                 {" "}
                 {/* w-3/4 */}
-                <div className="w-full ">
+                <div className="w-full">
                   <h1 className="text-white text-2xl font-bold text-center mb-6">
                     {selectedDate?.slice(0, 10)}
                   </h1>
@@ -130,7 +219,7 @@ function Calender() {
                       value={selectedDate || ""}
                     />
 
-                    <div className="flex space-x-3">
+                    <div className="flex items-center justify-center space-x-3">
                       <div className="mb-4">
                         <label className="block text-white font-semibold mb-2">
                           Application
@@ -177,33 +266,55 @@ function Calender() {
                       <textarea
                         name="efforts"
                         placeholder="Drop your efforts here..."
-                        className="w-full h-32 border-2 border-dashed border-gray-400 text-white bg-transparent rounded-lg p-2 resize-none "
+                        className={`w-2/3 min-h-32 max-h-32 border-2 text-white rounded-lg p-2 resize-none transition-all 
+                          ${
+                            isDragging
+                              ? "border-blue-400 bg-teal-800"
+                              : "border-dashed border-gray-400 bg-transparent"
+                          }`}
                         required
-                        onDragOver={(e) => e.preventDefault()}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "copy";
+                        }}
+                        onDragEnter={() => setIsDragging(true)}
+                        onDragLeave={() => setIsDragging(false)}
                         onDrop={(e) => {
                           e.preventDefault();
-                          const droppedText =
-                            e.dataTransfer.getData("text/plain");
-                          setEffortsText((prev) =>
-                            prev ? prev + "\n" + droppedText : droppedText
-                          );
+                          setIsDragging(false);
+
+                          const droppedDataRaw =
+                            e.dataTransfer.getData("application/json");
+
+                          try {
+                            const droppedData = JSON.parse(droppedDataRaw);
+                            const droppedTitle = droppedData.title;
+                            setDroppedTiles((prev) => [
+                              ...prev,
+                              {
+                                title: droppedData.title,
+                                color: droppedData.color,
+                              },
+                            ]);
+                            setEffortsText((prev) =>
+                              prev ? prev + "\n" + droppedTitle : droppedTitle
+                            );
+                          } catch (error) {
+                            console.error("Invalid drop data", error);
+                          }
                         }}
                         value={effortsText}
                         onChange={(e) => setEffortsText(e.target.value)}
                       ></textarea>
                     </div>
                     <div className="flex items-center justify-center m-4 gap-11">
-                      {/* <div className="w-full">
-                        <h1>Total Hrs: {totalHrs.toFixed(1)}</h1>
-                      </div> */}
-                      {/* <!-- Submit Button --> */}
                       <div className="text-center">
                         <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
                           Submit
                         </button>
                       </div>
                     </div>
-                    <div className="h-[200px] overflow-y-auto ">
+                    <div className="h-[200px] w-full overflow-y-auto ">
                       <div className="min-w-full bg-white text-black  rounded-xl overflow-hidden">
                         <div>
                           <div className="flex shadow-lg  items-center justify-between bg-purple-700 text-white">
@@ -217,7 +328,7 @@ function Calender() {
                             (text: string, index: number) => (
                               <div
                                 key={index}
-                                className="flex p-2 items-center justify-between"
+                                className="flex p-1 items-center justify-between"
                               >
                                 <div>
                                   <span>{text}</span>
@@ -233,7 +344,7 @@ function Calender() {
                                           updated[index] = e.target.value;
                                           setComments(updated);
                                         }}
-                                        className="border outline-none p-2 rounded-lg"
+                                        className="border w-full outline-none p-2 rounded-lg"
                                         type="text"
                                       />
                                     </div>
@@ -275,5 +386,5 @@ function Calender() {
   );
 }
 export default Calender;
-// bg-[#0d011f]
+
 
