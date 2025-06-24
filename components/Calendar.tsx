@@ -6,7 +6,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { EventInput } from "@fullcalendar/core";
+import { EventContentArg, EventInput } from "@fullcalendar/core";
 import MenuData from "./MenuData";
 import EffortData from "./EffortData";
 import { v4 as uuidv4 } from "uuid";
@@ -25,7 +25,7 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
   const [comments, setComments] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [droppedTiles, setDroppedTiles] = useState<
-    { title: string; color: string }[]
+    { title: string; color: string; effHrs: number }[]
   >([]);
 
   const [fullcalendarEvents, setFullcalendarEvents] = useState<EventInput[]>(
@@ -44,16 +44,6 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
       return newHrs.slice(0, lines.length);
     });
   }, [effortsText]);
-  function handleIncrement(index: number) {
-    const updated = [...effortsHrs];
-    if (updated[index] < 9) updated[index] = updated[index] + 0.5;
-    setEffortsHrs(updated);
-  }
-  function handleDecrement(index: number) {
-    const updated = [...effortsHrs];
-    if (updated[index] > 0) updated[index] = updated[index] - 0.5;
-    setEffortsHrs(updated);
-  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -71,22 +61,24 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
         `efforts-${selectedDate}`,
         JSON.stringify(effortData)
       );
-      const newEvents = effortsText
-        .split("\n")
-        .filter((line) => line.trim() !== "")
-        .map((line) => {
-          const tile = droppedTiles.find((t) => t.title === line);
-          return {
-            id: uuidv4(),
-            title: line,
-            start: selectedDate,
-            allDay: true,
-            color: tile?.color,
-          };
-        });
+
+      const newEvents = effortsHrs.map((hrs, index) => {
+        return {
+          id: uuidv4(),
+          title: droppedTiles[index]?.title || "Untitled",
+          start: selectedDate,
+          allDay: true,
+          // effortHr: Number(hrs),
+          extendedProps: {
+            effortHr: hrs,
+          },
+          color: droppedTiles[index]?.color,
+        };
+      });
 
       setFullcalendarEvents((prevEvents) => [...prevEvents, ...newEvents]);
       localStorage.setItem(`events-${selectedDate}`, JSON.stringify(newEvents));
+      // console.log(newEvents);
 
       setEffortsText("");
       setSelectApp("");
@@ -103,6 +95,7 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
     for (const key in localStorage) {
       if (key.startsWith("events-")) {
         const eventData = localStorage.getItem(key);
+
         if (eventData) {
           try {
             const parsed = JSON.parse(eventData);
@@ -156,6 +149,15 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
     info.event.remove();
   }
 
+  const renderEventContent = (eventInfo: EventContentArg) => {
+    return (
+      <div className="flex ">
+        <b className="flex-1">{eventInfo.event.title}</b>
+        <small>{eventInfo.event.extendedProps.effortHr} hrs</small>
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-screen p-4  bg-gray-50">
       {isMenuOpen && <MenuData onClickcrossMenu={toggleMenu} />}
@@ -166,6 +168,7 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
           initialView="dayGridMonth"
           selectable={true}
           nowIndicator={true}
+          displayEventTime={false}
           dragScroll={true}
           views={{
             dayGridMonth: {
@@ -179,10 +182,11 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
             },
           }}
           events={fullcalendarEvents}
+          eventContent={renderEventContent}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
-            right: "dayGridMonth,timeGridDay,timeGridWeek",
+            right: "dayGridMonth,dayGridDay,dayGridWeek",
           }}
           dateClick={(info) => {
             setSelectedDate(info.dateStr);
@@ -194,10 +198,10 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
       </div>
       {modalOpen && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/7  z-50 rounded-xl p-4 shadow-2xl">
-          <div className="bg-teal-900 text-center  p-2 rounded-xl shadow-lg">
+          <div className="bg-teal-900 text-center rounded-xl shadow-lg">
             <div className="flex  justify-end">
               <X
-                className="text-white items-end  cursor-pointer"
+                className="text-white items-end m-2  cursor-pointer"
                 onClick={() => setmodalOpen(false)}
               />
             </div>
@@ -205,7 +209,7 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
               {/* <div className="w-1/4 p-4">
                 <SideBar />
               </div> */}
-              <div className=" flex  p-4">
+              <div className=" flex">
                 {" "}
                 {/* w-3/4 */}
                 <div className="w-full">
@@ -219,8 +223,8 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                       value={selectedDate || ""}
                     />
 
-                    <div className="flex items-center justify-center space-x-3">
-                      <div className="mb-4">
+                    {/* <div className="flex items-center justify-center space-x-3">
+                      <div className="mb-6.5">
                         <label className="block text-white font-semibold mb-2">
                           Application
                         </label>
@@ -239,23 +243,21 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                           <option value="App3">App3</option>
                         </select>
                       </div>
-                      <div className="mb-4">
-                        <label className="block text-white font-semibold mb-2">
-                          Timing
-                        </label>
-                        <select
-                          value={selectOffice}
-                          onChange={(e) => setSelectOffice(e.target.value)}
-                          name="application"
-                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
-                          required
-                        >
-                          <option value="" disabled>
-                            Select Status
-                          </option>
-                          <option value="App1">In Office</option>
-                          <option value="App2">Out Office</option>
-                        </select>
+                      <div className=" border border-white rounded-lg px-10 py-1.5 text text-white">
+                        <h1>In Office</h1>
+                      </div>
+                    </div> */}
+                    <div>
+                      <div className="flex items-center justify-center space-x-3 mb-6 text-white font-semibold">
+                        <h1 className="border px-5 rounded-md py-1">
+                          Billing{" "}
+                        </h1>
+                        <h1 className="border px-5 rounded-md py-1 ">
+                          Centricity
+                        </h1>
+                        <h1 className="border px-5 rounded-md py-1">
+                          In Office
+                        </h1>
                       </div>
                     </div>
 
@@ -265,7 +267,7 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                       </label>
                       <textarea
                         name="efforts"
-                        placeholder="Drop your efforts here..."
+                        placeholder="Drag and Drop an Activity Here..."
                         className={`w-2/3 min-h-32 max-h-32 border-2 text-white rounded-lg p-2 resize-none transition-all 
                           ${
                             isDragging
@@ -294,8 +296,12 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                               {
                                 title: droppedData.title,
                                 color: droppedData.color,
+                                effHrs:
+                                  effortsHrs.length > 0 ? effortsHrs[0] : 0,
                               },
                             ]);
+                            console.log(droppedTiles);
+
                             setEffortsText((prev) =>
                               prev ? prev + "\n" + droppedTitle : droppedTitle
                             );
@@ -307,19 +313,19 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                         onChange={(e) => setEffortsText(e.target.value)}
                       ></textarea>
                     </div>
-                    <div className="flex items-center justify-center m-4 gap-11">
+                    {/* <div className="flex items-center justify-center m-4 gap-11">
                       <div className="text-center">
                         <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
                           Submit
                         </button>
                       </div>
-                    </div>
-                    <div className="h-[200px] w-full overflow-y-auto ">
-                      <div className="min-w-full bg-white text-black  rounded-xl overflow-hidden">
-                        <div>
+                    </div> */}
+                    <div className="h-[200px] w-3/4 mx-auto  overflow-y-auto ">
+                      <div className="flex flex-col justify-center content-center  bg-white text-black  rounded-xl overflow-hidden">
+                        <div className="">
                           <div className="flex shadow-lg  items-center justify-between bg-purple-700 text-white">
-                            <p className="py-2 px-4 text-left">Activity Name</p>
-                            <p className="py-2 px-4 text-left">Comments</p>
+                            <p className=" px-4 text-left">Activity Name</p>
+                            <p className=" px-4 text-left">Comments</p>
                             <p className="py-2 px-4 text-left">Effort (hrs)</p>
                           </div>
                         </div>
@@ -328,14 +334,20 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                             (text: string, index: number) => (
                               <div
                                 key={index}
-                                className="flex p-1 items-center justify-between"
+                                className="flex m-2 items-center justify-between"
                               >
                                 <div>
                                   <span>{text}</span>
                                 </div>
 
-                                {text && (
-                                  <div className="flex items-center m-4 space-x-5">
+                                {!text ? (
+                                  <div className="flex items-center justify-center w-full h-full">
+                                    <p className="text-gray-400">
+                                      Please Fill your efforts
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center  space-x-5">
                                     <div>
                                       <input
                                         value={comments[index] || ""}
@@ -348,24 +360,24 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                                         type="text"
                                       />
                                     </div>
-                                    <div>
-                                      <h1
-                                        className="w-5 cursor-pointer text-3xl truncate whitespace-nowrap overflow-hidden"
-                                        onClick={() => handleDecrement(index)}
-                                      >
-                                        -
-                                      </h1>
-                                    </div>
-                                    <div className="w-10 text-center">
-                                      {effortsHrs[index] || 0}
-                                    </div>
-                                    <div>
-                                      <h1
-                                        onClick={() => handleIncrement(index)}
-                                        className="w-5 cursor-pointer text-3xl truncate whitespace-nowrap overflow-hidden"
-                                      >
-                                        +
-                                      </h1>
+                                    <div className="efforts-hrs m-4">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value={
+                                          effortsHrs[index]?.toString() || ""
+                                        }
+                                        onChange={(e) =>
+                                          setEffortsHrs((prev) => {
+                                            const updated = [...prev];
+                                            updated[index] =
+                                              parseFloat(e.target.value) || 0;
+                                            return updated;
+                                          })
+                                        }
+                                        className="w-19 text-center p-2 rounded-lg border outline-none no-spinner"
+                                      />
                                     </div>
                                   </div>
                                 )}
@@ -373,6 +385,13 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                             )
                           )}
                         </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center m-4 gap-11">
+                      <div className="text-center">
+                        <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
+                          Submit
+                        </button>
                       </div>
                     </div>
                   </form>
@@ -386,5 +405,3 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
   );
 }
 export default Calender;
-
-
