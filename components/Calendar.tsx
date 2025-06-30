@@ -4,12 +4,13 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { EventContentArg, EventInput } from "@fullcalendar/core";
 import MenuData from "./MenuData";
 import EffortData from "./EffortData";
 import { v4 as uuidv4 } from "uuid";
+import { userContext } from "./UserProvder";
 
 interface ToggleData {
   isMenuOpen: boolean;
@@ -19,8 +20,6 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
   const [modalOpen, setmodalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [effortsText, setEffortsText] = useState("");
-  const [selectApp, setSelectApp] = useState("");
-  const [selectOffice, setSelectOffice] = useState("");
   const [effortsHrs, setEffortsHrs] = useState<number[]>([]);
   const [comments, setComments] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -31,6 +30,7 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
   const [fullcalendarEvents, setFullcalendarEvents] = useState<EventInput[]>(
     []
   );
+  const { user } = useContext(userContext);
   useEffect(() => {
     const lines = effortsText.split("\n").filter(Boolean);
 
@@ -47,49 +47,63 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     if (selectedDate) {
       const effortData = {
         other: "Efforts Filled",
+        user: user?.username,
         start: Date,
-        application: selectApp,
-        office: selectOffice,
         efforts: effortsText,
         effortsHrs: effortsHrs,
         comments: comments,
       };
+
       localStorage.setItem(
         `efforts-${selectedDate}`,
         JSON.stringify(effortData)
       );
 
+      // Create new events
       const newEvents = effortsHrs.map((hrs, index) => {
         return {
           id: uuidv4(),
           title: droppedTiles[index]?.title || "Untitled",
           start: selectedDate,
           allDay: true,
-          // effortHr: Number(hrs),
           extendedProps: {
             effortHr: hrs,
+            user: user?.username,
           },
           color: droppedTiles[index]?.color,
         };
       });
+      const existingEventsJSON = localStorage.getItem(`events-${selectedDate}`);
+      const existingEvents = existingEventsJSON
+        ? JSON.parse(existingEventsJSON)
+        : [];
+
+      const mergedEvents = [...existingEvents, ...newEvents];
+
+      localStorage.setItem(
+        `events-${selectedDate}`,
+        JSON.stringify(mergedEvents)
+      );
 
       setFullcalendarEvents((prevEvents) => [...prevEvents, ...newEvents]);
-      localStorage.setItem(`events-${selectedDate}`, JSON.stringify(newEvents));
-      // console.log(newEvents);
 
       setEffortsText("");
-      setSelectApp("");
-      setSelectOffice("");
+      setComments([]);
+      setEffortsHrs([]);
+      setDroppedTiles([]);
       setmodalOpen(false);
-      setComments(comments);
-      // setfullCalendarEvents([]);
+
       toast.success("Efforts submitted successfully!");
     }
   }
+
   useEffect(() => {
+    if (!user?.username) return;
+
     const allEvents: EventInput[] = [];
 
     for (const key in localStorage) {
@@ -100,7 +114,10 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
           try {
             const parsed = JSON.parse(eventData);
             if (Array.isArray(parsed)) {
-              allEvents.push(...parsed);
+              const userEvents = parsed.filter(
+                (ev) => ev?.extendedProps?.user === user?.username
+              );
+              allEvents.push(...userEvents);
             }
           } catch (e) {
             console.error(`Error parsing events from key ${key}`, e);
@@ -110,25 +127,16 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
     }
 
     setFullcalendarEvents(allEvents);
-  }, []);
+  }, [user?.username]);
 
   useEffect(() => {
-    if (modalOpen && selectedDate) {
-      const savedEfforts = localStorage.getItem(`efforts-${selectedDate}`);
-      if (savedEfforts) {
-        const parsed = JSON.parse(savedEfforts);
-        setEffortsText(parsed.efforts || "");
-        setSelectApp(parsed.application || "");
-        setSelectOffice(parsed.office || "");
-        setEffortsHrs(parsed.effortsHrs || []);
-        setComments(parsed.comments || []);
-      } else {
-        setEffortsText("");
-        setSelectApp("");
-        setSelectOffice("");
-      }
+    if (modalOpen) {
+      setEffortsText("");
+      setEffortsHrs([]);
+      setComments([]);
+      setDroppedTiles([]);
     }
-  }, [modalOpen, selectedDate]);
+  }, [modalOpen]);
   function handleEventClick(info: EventInput) {
     if (!confirm("Do you want to delete this tile?")) return;
 
@@ -206,12 +214,8 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
               />
             </div>
             <div className="">
-              {/* <div className="w-1/4 p-4">
-                <SideBar />
-              </div> */}
               <div className=" flex">
                 {" "}
-                {/* w-3/4 */}
                 <div className="w-full">
                   <h1 className="text-white text-2xl font-bold text-center mb-6">
                     {selectedDate?.slice(0, 10)}
@@ -222,31 +226,6 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                       name="date"
                       value={selectedDate || ""}
                     />
-
-                    {/* <div className="flex items-center justify-center space-x-3">
-                      <div className="mb-6.5">
-                        <label className="block text-white font-semibold mb-2">
-                          Application
-                        </label>
-                        <select
-                          name="application"
-                          className="w-full border text-white border-gray-300 rounded-lg p-2 bg-transparent"
-                          value={selectApp}
-                          onChange={(e) => setSelectApp(e.target.value)}
-                          required
-                        >
-                          <option value="" disabled>
-                            Select Application
-                          </option>
-                          <option value="App1">App1</option>
-                          <option value="App2">App2</option>
-                          <option value="App3">App3</option>
-                        </select>
-                      </div>
-                      <div className=" border border-white rounded-lg px-10 py-1.5 text text-white">
-                        <h1>In Office</h1>
-                      </div>
-                    </div> */}
                     <div>
                       <div className="flex items-center justify-center space-x-3 mb-6 text-white font-semibold">
                         <h1 className="border px-5 rounded-md py-1">
@@ -313,13 +292,6 @@ export function Calender({ isMenuOpen, toggleMenu }: ToggleData) {
                         onChange={(e) => setEffortsText(e.target.value)}
                       ></textarea>
                     </div>
-                    {/* <div className="flex items-center justify-center m-4 gap-11">
-                      <div className="text-center">
-                        <button className="bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer text-white px-6 py-2 rounded-xl hover:opacity-90 transition">
-                          Submit
-                        </button>
-                      </div>
-                    </div> */}
                     <div className="h-[200px] w-3/4 mx-auto  overflow-y-auto ">
                       <div className="flex flex-col justify-center content-center  bg-white text-black  rounded-xl overflow-hidden">
                         <div className="">

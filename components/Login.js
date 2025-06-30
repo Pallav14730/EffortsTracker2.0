@@ -1,94 +1,86 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import toast from "react-hot-toast";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { UserCircleIcon } from "lucide-react";
-import { UserContext } from "@/components/UserProvider";
-import { useContext, useState } from "react";
-// import { useNavigate } from "react-router-dom";
+import { useState, useContext } from "react";
+import { userContext } from "./UserProvder"
+import { Eye, EyeOff } from "lucide-react";
+
+// pallav.x.verma@QuestDiagnostics.com
 export default function Login() {
-  const [username, setusername] = useState("");
-  const [password, setpassword] = useState("");
-  const { user,setUser } = useContext(UserContext);
-  // const navigate = useNavigate();
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const { setUser } = useContext(userContext);
+ const allowedDomain = "@QuestDiagnostics.com";
+
   function handleSubmit(e) {
     e.preventDefault();
-    const allowedDomain = "@QuestDiagnostics.com";
 
-    if (!username.endsWith(allowedDomain)) {
-      toast.error(`Only ${allowedDomain} emails are allowed`, {
-        duration: 2000,
-        position: "top-right",
-      });
+   if (!username.endsWith(allowedDomain)) {
+      alert(`Only ${allowedDomain} emails are allowed`)
       return;
     }
-    setUser({ username, password });
-    toast.success("successfully Logged in",{
-      duration: 2000,
-      position: 'top-right',
-  });
-    setusername("");
-    setpassword("");
-    localStorage.setItem('username', username);
-    console.log(username);
+
+    setUser({ username });
+
+    localStorage.setItem("username", username);
+
+    setUsername("");
+    setPassword("");
   }
+
+
   return (
-    <Dialog>
-        {!user && (
-    <DialogTrigger asChild>
-      <UserCircleIcon className="cursor-pointer" />
-    </DialogTrigger>
-  )}
-  {user && <h1>{user.username}</h1>}
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center text-green-800">
-            Login
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Email
-            </Label>
-            <Input
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-8 space-y-6">
+        <h2 className="text-3xl font-bold text-center text-gray-800">Login</h2>
+        <p className="text-center text-gray-500 text-sm">Please sign in to your account</p>
+
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email Address
+            </label>
+            <input
               value={username}
-              onChange={(e) => setusername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value)}
               type="email"
-              id="name"
-              className="col-span-3 "
+              id="email"
+              className="mt-1 w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="bob.x.bob@QuestDiagnostics.com"
+              required
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="username" className="text-right">
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
-            </Label>
-            <Input
-              value={password}
-              onChange={(e) => setpassword(e.target.value)}
-              type="password"
-              id="password"
-              className="col-span-3"
-            />
+            </label>
+            <div className="relative mt-1">
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type={showPassword ? "text" : "password"}
+                id="password"
+                className="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
-          <DialogFooter className="text-center">
-          <Button type="submit" className="">
-            Login
-          </Button>
-        </DialogFooter>
+
+          <button
+            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition"
+          >
+            Sign In
+          </button>
         </form>
-        
-      </DialogContent>
-    </Dialog>
+
+      </div>
+    </div>
   );
 }
