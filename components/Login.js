@@ -8,7 +8,10 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { setUser } = useContext(userContext);
- const allowedDomain = "@QuestDiagnostics.com";
+ const domain = "@QuestDiagnostics.com";
+ const allowedDomain = domain.toLowerCase();
+
+ 
 
   function handleSubmit(e) {
     e.preventDefault();
